@@ -11,6 +11,7 @@
 #include <string.h>	
 
 #include <curl.h>
+#include <cJSON.h>
 
 // curl 관련 설정
 CURL* curl;
@@ -21,7 +22,7 @@ char key[50] = "465a73644d6b7968313032624d434c41";
 char url[500] = "http://swopenapi.seoul.go.kr/api/subway/465a73644d6b7968313032624d434c41/xml/realtimeStationArrival/0/5/";
 //http://swopenAPI.seoul.go.kr/api/subway/sample/xml/realtimeStationArrival/0/5/서울
 //http://swopenapi.seoul.go.kr/api/subway/sample/xml/realtimeStationArrival/1/5/%EC%A0%95%EC%99%95
-char sample[500] = "http://swopenapi.seoul.go.kr/api/subway/465a73644d6b7968313032624d434c41/xml/realtimeStationArrival/0/5/%EC%A0%95%EC%99%95";
+char sample[500] = "http://swopenapi.seoul.go.kr/api/subway/465a73644d6b7968313032624d434c41/json/realtimeStationArrival/0/5/%EC%A0%95%EC%99%95";
 
 
 // 데이터 받을 때 사용할 버퍼 구조체
@@ -33,20 +34,23 @@ struct MemoryStruct {
 
 //함수 선언 파트
 int praseAPI();
+void parseJSON(const char* filename);
 char processingAPI();
 static size_t WriteMemoryCallback(void* contents, size_t size, size_t nmemb, void* userp);
-
+void DEVTool();
 
 void main()
 {
 	SetConsoleOutputCP(CP_UTF8);
 
-	
-
-	//processingAPI();
-
 	praseAPI();
-	system("start output.xml");
+	//processingAPI();
+	parseJSON("output.json");
+	DEVTool();
+}
+
+void DEVTool() {
+	system("start output.json");
 }
 
 int praseAPI() {
@@ -59,7 +63,6 @@ int praseAPI() {
 	if (curl) {
 		// curl을 사용할 url 설정
 		curl_easy_setopt(curl, CURLOPT_URL, sample);
-		//curl_easy_setopt(curl, CURLOPT_URL, "http://swopenapi.seoul.go.kr/api/subway/465a73644d6b7968313032624d434c41/json/realtimeStationArrival/0/5/이수");
 		
 		// FOLLOW LOCATION설정, 리다이렉트 관련설정
 		curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L); 
@@ -80,11 +83,11 @@ int praseAPI() {
 		}
 		else {
 			// 받아온 데이터를 파일로 저장
-			FILE* fp = fopen("output.xml", "w");
+			FILE* fp = fopen("output.json", "w");
 			if (fp) {
 				fwrite(chunk.memory, sizeof(char), chunk.size, fp);
 				fclose(fp);
-				printf("XML data saved to output.xml\n");
+				printf("XML data saved to output.json\n");
 			}
 			else {
 				printf("Failed to open file for writing.\n");
@@ -121,11 +124,59 @@ static size_t WriteMemoryCallback(void* contents, size_t size, size_t nmemb, voi
 	return realsize;
 }
 
+
+void parseJSON(const char* filename) {
+	// 파일을 열고 내용을 읽기
+	FILE* file = fopen(filename, "r");
+	if (!file) {
+		printf("Failed to open JSON file\n");
+		return;
+	}
+
+	fseek(file, 0, SEEK_END);
+	long length = ftell(file);
+	fseek(file, 0, SEEK_SET);
+	char* jsonData = malloc(length + 1);
+	fread(jsonData, 1, length, file);
+	fclose(file);
+	jsonData[length] = '\0'; // null-terminate the string
+
+	// cJSON 객체로 파싱
+	cJSON* json = cJSON_Parse(jsonData);
+	free(jsonData); // 메모리 해제
+
+	if (json == NULL) {
+		printf("Failed to parse JSON\n");
+		return;
+	}
+
+	// "stations" 배열을 가져오기
+	cJSON* stations = cJSON_GetObjectItem(json, "stations");
+	if (stations != NULL && cJSON_IsArray(stations)) {
+		for (int i = 0; i < cJSON_GetArraySize(stations); i++) {
+			cJSON* station = cJSON_GetArrayItem(stations, i);
+			if (station != NULL) {
+				// 각 항목의 데이터 출력
+				cJSON* name = cJSON_GetObjectItem(station, "name");
+				cJSON* line = cJSON_GetObjectItem(station, "line");
+				cJSON* arrival = cJSON_GetObjectItem(station, "arrival");
+				printf("Station Name: %s\n", name->valuestring);
+				printf("Line: %s\n", line->valuestring);
+				printf("Arrival: %s\n", arrival->valuestring);
+				printf("\n");
+			}
+		}
+	}
+
+	// 메모리 해제
+	cJSON_Delete(json);
+}
+
 char processingAPI()
 {
 	FILE* stream;
 
-	stream = fopen("ex.txt", "r");
+	stream = fopen("ouput.xml", "r");
 
 	char string[700];
 	char onePart = 0;
