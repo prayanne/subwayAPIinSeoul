@@ -21,13 +21,13 @@ char key[50] = "465a73644d6b7968313032624d434c41";
 char url[500] = "http://swopenapi.seoul.go.kr/api/subway/465a73644d6b7968313032624d434c41/xml/realtimeStationArrival/0/5/";
 //http://swopenAPI.seoul.go.kr/api/subway/sample/xml/realtimeStationArrival/0/5/서울
 
-char sample[500] = "http://swopenapi.seoul.go.kr/api/subway/465a73644d6b7968313032624d434c41/xml/realtimeStationArrival/0/5/정왕";
+char sample[500] = "http://swopenapi.seoul.go.kr/api/subway/465a73644d6b7968313032624d434c41/xml/realtimeStationArrival/0/5/이수";
 
 
 
 //함수 선언 파트
-int praseAPI();
-char processingAPI();
+int praseAPI(FILE* stream);
+char processingAPI(FILE* stream);
 
 
 
@@ -35,37 +35,39 @@ void main()
 {
 	SetConsoleOutputCP(CP_UTF8);
 
-	processingAPI();
+	FILE* stream;
+	stream = fopen("ex.txt", "w+");
 
-	praseAPI();
-	
+	praseAPI(stream);
+	processingAPI(stream);
+
+	fclose(stream);
+	stream = NULL;
+
+	system("notepad.exe ex.txt");
 }
 
-int praseAPI() {
+int praseAPI(FILE* stream) {
 	curl = curl_easy_init();
 	if (curl) {
 		curl_easy_setopt(curl, CURLOPT_URL, url);
 		curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+		
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, stream);
+		
+		fscanf(stream, "%s", curl);
+
 		res = curl_easy_perform(curl);
 		curl_easy_cleanup(curl);
-
-		printf("Response: %s\n", curl);
-
 		return 0;
 	}
 	
 }
 
-char processingAPI()
+char processingAPI(FILE* stream)
 {
-	FILE* stream;
-
-	stream = fopen("ex.txt", "r");
-
 	char string[700];
 	char onePart = 0;
-
-
 
 	memset(string, 0, sizeof(string));
 
@@ -97,8 +99,5 @@ char processingAPI()
 		fscanf(stream, "%s", string);
 
 	}
-	fclose(stream);
-	stream = NULL;
-
 	return 0;
 }
