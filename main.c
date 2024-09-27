@@ -20,54 +20,117 @@ CURLcode res;
 char key[50] = "465a73644d6b7968313032624d434c41";
 char url[500] = "http://swopenapi.seoul.go.kr/api/subway/465a73644d6b7968313032624d434c41/xml/realtimeStationArrival/0/5/";
 //http://swopenAPI.seoul.go.kr/api/subway/sample/xml/realtimeStationArrival/0/5/서울
+//http://swopenapi.seoul.go.kr/api/subway/sample/xml/realtimeStationArrival/1/5/%EC%A0%95%EC%99%95
+char sample[500] = "http://swopenapi.seoul.go.kr/api/subway/465a73644d6b7968313032624d434c41/xml/realtimeStationArrival/0/5/%EC%A0%95%EC%99%95";
 
-char sample[500] = "http://swopenapi.seoul.go.kr/api/subway/465a73644d6b7968313032624d434c41/xml/realtimeStationArrival/0/5/이수";
 
+// 데이터 받을 때 사용할 버퍼 구조체
+struct MemoryStruct {
+	char* memory;
+	size_t size;
+};
 
 
 //함수 선언 파트
-int praseAPI(FILE* stream);
-char processingAPI(FILE* stream);
-
+int praseAPI();
+char processingAPI();
+static size_t WriteMemoryCallback(void* contents, size_t size, size_t nmemb, void* userp);
 
 
 void main()
 {
 	SetConsoleOutputCP(CP_UTF8);
 
-	FILE* stream;
-	stream = fopen("ex.txt", "w+");
+	
 
-	praseAPI(stream);
-	processingAPI(stream);
+	//processingAPI();
 
-	fclose(stream);
-	stream = NULL;
-
-	system("notepad.exe ex.txt");
+	praseAPI();
+	system("start output.xml");
 }
 
-int praseAPI(FILE* stream) {
+int praseAPI() {
+	
+	struct MemoryStruct chunk;
+	chunk.memory = malloc(1);  // 메모리 초기화
+	chunk.size = 0;            // 데이터 크기 초기화
+	
 	curl = curl_easy_init();
 	if (curl) {
-		curl_easy_setopt(curl, CURLOPT_URL, url);
-		curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+		// curl을 사용할 url 설정
+		curl_easy_setopt(curl, CURLOPT_URL, sample);
+		//curl_easy_setopt(curl, CURLOPT_URL, "http://swopenapi.seoul.go.kr/api/subway/465a73644d6b7968313032624d434c41/json/realtimeStationArrival/0/5/이수");
 		
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, stream);
+		// FOLLOW LOCATION설정, 리다이렉트 관련설정
+		curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L); 
 		
-		fscanf(stream, "%s", curl);
-
+		// 데이터를 받을 콜백 함수 설정
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+		
+		// 콜백 함수에 전달할 데이터 구조체 설정
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)&chunk);
+		
+		// http 요청 수행
 		res = curl_easy_perform(curl);
+
+
+		// 요청이 성공했는지 확인
+		if (res != CURLE_OK) {
+			fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+		}
+		else {
+			// 받아온 데이터를 파일로 저장
+			FILE* fp = fopen("output.xml", "w");
+			if (fp) {
+				fwrite(chunk.memory, sizeof(char), chunk.size, fp);
+				fclose(fp);
+				printf("XML data saved to output.xml\n");
+			}
+			else {
+				printf("Failed to open file for writing.\n");
+			}
+		}
+
 		curl_easy_cleanup(curl);
+
+		// 메모리 해제
+		free(chunk.memory);  
+
 		return 0;
 	}
 	
 }
 
-char processingAPI(FILE* stream)
+// 콜백 함수: curl이 데이터를 받을 때 호출되는 함수
+static size_t WriteMemoryCallback(void* contents, size_t size, size_t nmemb, void* userp) {
+	size_t realsize = size * nmemb;
+	struct MemoryStruct* mem = (struct MemoryStruct*)userp;
+
+	char* ptr = realloc(mem->memory, mem->size + realsize + 1); // 메모리 재할당
+	if (ptr == NULL) {
+		// 메모리 할당 실패
+		printf("not enough memory (realloc returned NULL)\n");
+		return 0;
+	}
+
+	mem->memory = ptr;
+	memcpy(&(mem->memory[mem->size]), contents, realsize); // 데이터 복사
+	mem->size += realsize;
+	mem->memory[mem->size] = 0; // null-terminate
+
+	return realsize;
+}
+
+char processingAPI()
 {
+	FILE* stream;
+
+	stream = fopen("ex.txt", "r");
+
 	char string[700];
 	char onePart = 0;
+
+
 
 	memset(string, 0, sizeof(string));
 
@@ -99,5 +162,8 @@ char processingAPI(FILE* stream)
 		fscanf(stream, "%s", string);
 
 	}
+	fclose(stream);
+	stream = NULL;
+
 	return 0;
 }

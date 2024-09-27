@@ -135,6 +135,15 @@
   <ItemGroup>
     <ClCompile Include="main.c" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="ex.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="output.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="output.xml" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
