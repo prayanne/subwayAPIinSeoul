@@ -153,7 +153,7 @@ char processingAPI()
 			if (string[i] == '>')
 			{
 				printf("\n");
-				// key 입력 시퀀스 중간 점검 및, 다음 값 체크
+				// key 입력 시퀀스 중간 점검 및, 다음 값 체크ef
 			}
 
 		}
