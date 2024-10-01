@@ -24,6 +24,9 @@ char key[50] = "465a73644d6b7968313032624d434c41";
 char url[500] = "http://swopenapi.seoul.go.kr/api/subway/465a73644d6b7968313032624d434c41/xml/realtimeStationArrival/0/5/";
 char sample[500] = "http://swopenapi.seoul.go.kr/api/subway/465a73644d6b7968313032624d434c41/json/realtimeStationArrival/0/5/%EC%A0%95%EC%99%95";
 
+struct jsonArr {
+
+};
 
 
 
@@ -36,7 +39,7 @@ struct MemoryStruct {
 
 //함수 선언 파트
 int praseAPI();
-void parseJSON(const char* filename);
+void parseJSON(const char* filename, const char* csvfile, char apiHeader, char arr[]);
 char processingAPI();
 static size_t WriteMemoryCallback(void* contents, size_t size, size_t nmemb, void* userp);
 void DEVTool();
@@ -45,10 +48,17 @@ char chkTime(void);
 void main()
 {
 	SetConsoleOutputCP(CP_UTF8);
+<<<<<<< HEAD
 	char time = chkTime();
 	if (time <= 23 && time >= 7) praseAPI();
+=======
+
+	char nodeArray[7][15] = {"updnLine", "trainLineNm", "statnNm", "bstatnNm", "arvlMsg2", "arvlMsg3", "recptnDt"};
+
+	praseAPI();
+>>>>>>> fec33a2c108385173b21bcef831123235505bfd7
 	//processingAPI();
-	parseJSON("output.json");
+	parseJSON("output.json", "csv_out.txt", "realtimeArrivalList", nodeArray);
 	DEVTool();
 }
 
@@ -69,7 +79,6 @@ void DEVTool() {
 
 
 int praseAPI() {
-	
 	struct MemoryStruct chunk;
 	chunk.memory = malloc(1);  // 메모리 초기화
 	chunk.size = 0;            // 데이터 크기 초기화
@@ -140,7 +149,7 @@ static size_t WriteMemoryCallback(void* contents, size_t size, size_t nmemb, voi
 }
 
 
-void parseJSON(const char* filename) {
+void parseJSON(const char* filename, const char* csvfile, char apiHeader, char arr[]) {
 	// 파일을 열고 내용을 읽기
 	FILE* file = fopen(filename, "r");
 	if (!file) {
@@ -166,18 +175,20 @@ void parseJSON(const char* filename) {
 	}
 
 	// "stations" 배열을 가져오기
-	cJSON* stations = cJSON_GetObjectItem(json, "stations");
+	cJSON* stations = cJSON_GetObjectItem(json, "realtimeArrivalList");
 	if (stations != NULL && cJSON_IsArray(stations)) {
 		for (int i = 0; i < cJSON_GetArraySize(stations); i++) {
 			cJSON* station = cJSON_GetArrayItem(stations, i);
 			if (station != NULL) {
 				// 각 항목의 데이터 출력
 				cJSON* name = cJSON_GetObjectItem(station, "name");
-				cJSON* line = cJSON_GetObjectItem(station, "line");
+				cJSON* line = cJSON_GetObjectItem(station, arr[1]);
 				cJSON* arrival = cJSON_GetObjectItem(station, "arrival");
-				printf("Station Name: %s\n", name->valuestring);
+				cJSON* from = cJSON_GetObjectItem(station, "updnLine"); 
+				/*printf("Station Name: %s\n", name->valuestring);
 				printf("Line: %s\n", line->valuestring);
-				printf("Arrival: %s\n", arrival->valuestring);
+				printf("Arrival: %s\n", arrival->valuestring);*/
+				printf("Arrival: %s\n", from->valuestring);
 				printf("\n");
 			}
 		}
