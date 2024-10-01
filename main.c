@@ -18,11 +18,13 @@ CURL* curl;
 CURLcode res;
 
 // API 관련 변수 선언, 이후 함수 내로 이동 필
+#define outputDataType = "json"
+
 char key[50] = "465a73644d6b7968313032624d434c41";
 char url[500] = "http://swopenapi.seoul.go.kr/api/subway/465a73644d6b7968313032624d434c41/xml/realtimeStationArrival/0/5/";
-//http://swopenAPI.seoul.go.kr/api/subway/sample/xml/realtimeStationArrival/0/5/서울
-//http://swopenapi.seoul.go.kr/api/subway/sample/xml/realtimeStationArrival/1/5/%EC%A0%95%EC%99%95
 char sample[500] = "http://swopenapi.seoul.go.kr/api/subway/465a73644d6b7968313032624d434c41/json/realtimeStationArrival/0/5/%EC%A0%95%EC%99%95";
+
+
 
 
 // 데이터 받을 때 사용할 버퍼 구조체
@@ -38,20 +40,33 @@ void parseJSON(const char* filename);
 char processingAPI();
 static size_t WriteMemoryCallback(void* contents, size_t size, size_t nmemb, void* userp);
 void DEVTool();
+char chkTime(void);
 
 void main()
 {
 	SetConsoleOutputCP(CP_UTF8);
-
-	praseAPI();
+	char time = chkTime();
+	if (time <= 23 && time >= 7) praseAPI();
 	//processingAPI();
 	parseJSON("output.json");
 	DEVTool();
 }
 
+
+
+
+/*======================================================================================================================*/
+
+
 void DEVTool() {
+	
 	system("start output.json");
+	//system("start output.xml");
 }
+
+
+/*======================================================================================================================*/
+
 
 int praseAPI() {
 	
@@ -217,4 +232,21 @@ char processingAPI()
 	stream = NULL;
 
 	return 0;
+}
+
+
+
+/*======================================================================================================================*/
+
+
+char chkTime(void)
+{
+	time_t seconds = time(NULL);
+	struct tm* now = localtime(&seconds);
+
+	printf("[%04d/%02d/%02d] %02d:%02d:%02d\n", 1900 + now->tm_year,
+		now->tm_mon + 1, now->tm_mday, now->tm_hour,
+		now->tm_min, now->tm_sec);
+
+	return now->tm_hour;
 }
